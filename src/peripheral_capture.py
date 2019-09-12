@@ -8,8 +8,9 @@ from pynput.mouse import Controller as MouseController
 from pynput.keyboard import Listener as KeyboardListener
 from pynput.keyboard import Controller as KeyboardController
 from pynput.keyboard import Key
+from format2pyautogui import mouse2pyautogui, keyboard2pyautogui
 #import keyboard
-import pyautogui, os
+import pyautogui, os, threading
 import tkinter as tk
 import tkinter.filedialog as tk_dialog
 global Variable_Name
@@ -48,21 +49,21 @@ class NamingGUI(tk.Frame):
         variable_name = self.variable_name.get()
 
 # Not implemented
-def NamingGUI():
-   naming_root = tk.Toplevel()
-   naming_root.wm_title("Give me a name!!")
-
-   # First Line
-   tk.Label(naming_root, text = "Name of variable: ")\
-           .grid(row = 0, column = 0, sticky = tk.W)
-
-   variable_name = tk.StringVar()
-   tk.Entry(naming_root, textvariable = variable_name, width = 30)\
-           .grid(row = 0, column = 1)
-
-   # Second Line
-   tk.Button(naming_root, text = "Pick this name", command = naming_root.destroy)\
-           .grid(row = 1, column = 0, columnspan = 2)
+#def NamingGUI():
+#   naming_root = tk.Toplevel()
+#   naming_root.wm_title("Give me a name!!")
+#
+#   # First Line
+#   tk.Label(naming_root, text = "Name of variable: ")\
+#           .grid(row = 0, column = 0, sticky = tk.W)
+#
+#   variable_name = tk.StringVar()
+#   tk.Entry(naming_root, textvariable = variable_name, width = 30)\
+#           .grid(row = 0, column = 1)
+#
+#   # Second Line
+#   tk.Button(naming_root, text = "Pick this name", command = naming_root.destroy)\
+#           .grid(row = 1, column = 0, columnspan = 2)
 
 
 # Main GUI
@@ -71,6 +72,7 @@ class MainApplication(tk.Frame):
         tk.Frame.__init__(self, root, *args, **kwargs)
         self.root = root
 
+        self.recorded_data = []
         # Title
         self.root.title("Super Recorder")
 
@@ -90,7 +92,7 @@ class MainApplication(tk.Frame):
 
         self.recording_button = tk.StringVar(root)
         self.recording_button.set("Scroll Lock")
-        choices = {"Scroll Lock", "Num Lock", "Caps Lock"}
+        choices = {"None", "Scroll Lock", "Num Lock", "Caps Lock"}
         recording_button_option = tk.OptionMenu(root, self.recording_button, *choices)
         recording_button_option.grid(row = 0, column = 2)
 
@@ -100,7 +102,7 @@ class MainApplication(tk.Frame):
 
         self.naming_button = tk.StringVar(root)
         self.naming_button.set("Num Lock")
-        choices = {"Scroll Lock", "Num Lock", "Caps Lock"}
+        choices = {"None", "Scroll Lock", "Num Lock", "Caps Lock"}
         naming_button_option = tk.OptionMenu(root, self.naming_button, *choices)
         naming_button_option.grid(row = 1, column = 2)
 
@@ -110,14 +112,15 @@ class MainApplication(tk.Frame):
 
         self.img_button = tk.StringVar(root)
         self.img_button.set("Caps Lock")
-        choices = {"Scroll Lock", "Num Lock", "Caps Lock"}
+        choices = {"None", "Scroll Lock", "Num Lock", "Caps Lock"}
         img_button_option = tk.OptionMenu(root, self.img_button, *choices)
         img_button_option.grid(row = 2, column = 2)
 
         # Start button
-        tk.Button(root, text = "Start (press Esc to stop)", \
+        self.start_button = tk.Button(root, text = "Start (press Esc to stop)", \
                   command = self.call_program, fg = "white",bg = "green", \
-                  height = 1, width = 20).grid(row = 15, column = 0, columnspan = 2)
+                  height = 1, width = 20)
+        self.start_button.grid(row = 15, column = 0, columnspan = 2)
 
         # Save as button
         self.save_as_button = tk.Button(root, text = "Save as", command = self.save_as,\
@@ -133,10 +136,28 @@ class MainApplication(tk.Frame):
 
     def call_program(self):
 
+        # Button map
+        button_map = self.get_button_map()
+
+        # Run program
+        self.recorded_data += start_program(self.root, button_map)
+
+        # By now, the program already stopped
+
+        # Change properties of buttons
+        self.save_as_button.config(state = "normal")
+        self.start_button.config(text = "Continue")
+
+        # Bring window to the front
+        root.attributes('-topmost', 1)
+        root.attributes('-topmost', 0)
+
+    def get_button_map(self):
         # Map Options to Keys
         option_map = {"Scroll Lock" : Key.scroll_lock,
                       "Num Lock" : Key.num_lock,
-                      "Caps Lock" : Key.caps_lock}
+                      "Caps Lock" : Key.caps_lock,
+                      "None" : "None"}
         # Map var_name to chosen button from main GUI
         button_map = {"recording" : self.recording_button.get(),
                       "naming" : self.naming_button.get(),
@@ -145,18 +166,7 @@ class MainApplication(tk.Frame):
         # Map var_name to Keys
         for key, val in button_map.items():
             button_map[key] = option_map[str(val)]
-
-
-        # Run program
-        self.recorded_data = start_program(self.root, button_map)
-
-        # By now, the program already stopped
-
-        # Change state of save_as_button
-        self.save_as_button.config(state = "normal")
-        # Bring window to the front
-        root.attributes('-topmost', 1)
-        root.attributes('-topmost', 0)
+        return button_map
 
     def save_as(self):
         # Prompt user for file path
@@ -179,7 +189,7 @@ def start_program(root, button_map):
     count = 0
     recorded_data = []
     recording = naming = img_capturing = False
-    functional_keys = list(button_map.values()) + [Key.shift, Key.ctrl_l, Key.esc]
+    functional_keys = list(button_map.values()) + [Key.esc]
 
     # Key pressed event
     def on_press(key):
@@ -229,8 +239,10 @@ def start_program(root, button_map):
 
     # Key released event
     def on_release(key):
+#        if recording and key not in functional_keys:
+#            recorded_data.append(keyboard2pyautogui(key_released = key))
+#            print(keyboard2pyautogui(key_released = key))
         pass
-
     # Mouse moved event
     def on_move(x, y):
         pass
@@ -244,7 +256,9 @@ def start_program(root, button_map):
                 # problem might be because of the blocking behavior of listeners
                 naming_root = tk.Tk()
                 NamingGUI(naming_root)
-                naming_root.mainloop()
+                x = threading.Thread(target = naming_root.mainloop)
+                x.start()
+#                naming_root.mainloop()
                 global variable_name
                 print(f"Mouse clicked at {x}, {y} with {button} is named {variable_name}")
             else:
@@ -264,32 +278,6 @@ def start_program(root, button_map):
 
     # return recorded data to run_program inside Main App Class to save
     return recorded_data
-
-# Convert mouse events to pyautogui format. Called in on_press()
-def mouse2pyautogui(x = None, y = None, button = None, dx = None, dy = None):
-    # Mouse clicking
-    if button:
-        if str(button) == "Button.left":
-            return f"pyautogui.click(x = {x}, y = {y}, button = 'left')"
-        elif str(button) == "Button.right":
-            return f"pyautogui.click(x = {x}, y = {y}, button = 'right')"
-        elif str(button) == "Button.middle":
-            return f"pyautogui.click(x = {x}, y = {y}, button = 'middle')"
-
-    # Mouse vertical scrolling
-    if dy: return f"pyautogui.scroll({dy}, x = {x}, y = {y})"
-
-    # Mouse horizontal scrolling
-    if dx: return f"pyautogui.hscroll({dx}, x = {x}, y = {y})"
-
-# Convert keyboard events to pyautogui format. Called in on_press()
-def keyboard2pyautogui(key_pressed = None):
-    if key_pressed:
-        return f"pyautogui.press({str(key_pressed)})"
-        # for special keys (enter, tab, shift, ...) you need to compare each of them
-        # because pynput and pyautogui name them differently. More here:
-        # https://pynput.readthedocs.io/en/latest/keyboard.html#pynput.keyboard.KeyCode
-        # https://pyautogui.readthedocs.io/en/latest/keyboard.html#keyboard-keys
 
 if __name__ == "__main__":
     root = tk.Tk()
