@@ -84,43 +84,72 @@ class MainApplication(tk.Frame):
     def main_gui(self):
         root = self.root
 
-        # First Line
+        # Recording Options
         tk.Label(root, text = "Press this key to start recording:")\
                 .grid(row = 0, column = 0, sticky = tk.W)
 
-        recording_button = tk.StringVar(root)
-        recording_button.set("Scroll Lock")
-        choices = {"Scroll Lock"}
-        recording_button_option = tk.OptionMenu(root, recording_button, *choices)
+        self.recording_button = tk.StringVar(root)
+        self.recording_button.set("Scroll Lock")
+        choices = {"Scroll Lock", "Num Lock", "Caps Lock"}
+        recording_button_option = tk.OptionMenu(root, self.recording_button, *choices)
         recording_button_option.grid(row = 0, column = 2)
 
-        # Second line
+        # Naming Options
         tk.Label(root, text = "Press this key to start naming:")\
                 .grid(row = 1, column = 0, sticky = tk.W)
 
-        naming_button = tk.StringVar(root)
-        naming_button.set("Num Lock")
-        choices = {"Num Lock"}
-        naming_button_option = tk.OptionMenu(root, naming_button, *choices)
+        self.naming_button = tk.StringVar(root)
+        self.naming_button.set("Num Lock")
+        choices = {"Scroll Lock", "Num Lock", "Caps Lock"}
+        naming_button_option = tk.OptionMenu(root, self.naming_button, *choices)
         naming_button_option.grid(row = 1, column = 2)
 
-        # Third line
+        # Image Capturing Options
+        tk.Label(root, text = "Press this key to start Image capturing:")\
+                .grid(row = 2, column = 0, sticky = tk.W)
+
+        self.img_button = tk.StringVar(root)
+        self.img_button.set("Caps Lock")
+        choices = {"Scroll Lock", "Num Lock", "Caps Lock"}
+        img_button_option = tk.OptionMenu(root, self.img_button, *choices)
+        img_button_option.grid(row = 2, column = 2)
+
+        # Start button
         tk.Button(root, text = "Start (press Esc to stop)", \
                   command = self.call_program, fg = "white",bg = "green", \
                   height = 1, width = 20).grid(row = 15, column = 0, columnspan = 2)
-        
+
+        # Save as button
         self.save_as_button = tk.Button(root, text = "Save as", command = self.save_as,\
                   state = tk.DISABLED, height = 1, width = 10)
         self.save_as_button.grid(row = 15, column = 2, columnspan = 1)
 
-        # Fourth line
+        # Note
         tk.Label(root, text = "Note:\n"
+                 "Press Caps Lock to turn on Image capture mode\n"
                  "Press L-Shift to Select Top Left Corner of Image\n"
                  "Press L-Ctrl to Select Bottom Right Corner of Image and Save\n",\
                  justify = tk.LEFT).grid(row = 20, column = 0, columnspan = 3, sticky = tk.W)
 
     def call_program(self):
-        self.recorded_data = start_program(self.root)
+
+        # Map Options to Keys
+        option_map = {"Scroll Lock" : Key.scroll_lock,
+                      "Num Lock" : Key.num_lock,
+                      "Caps Lock" : Key.caps_lock}
+        # Map var_name to chosen button from main GUI
+        button_map = {"recording" : self.recording_button.get(),
+                      "naming" : self.naming_button.get(),
+                      "img_capturing" : self.img_button.get()}
+
+        # Map var_name to Keys
+        for key, val in button_map.items():
+            button_map[key] = option_map[str(val)]
+
+
+        # Run program
+        self.recorded_data = start_program(self.root, button_map)
+
         # By now, the program already stopped
 
         # Change state of save_as_button
@@ -139,7 +168,7 @@ class MainApplication(tk.Frame):
                 f.write(data + "\n")
 
 # Main program, this is the recorder
-def start_program(root):
+def start_program(root, button_map):
     # Controller
     mouse = MouseController()
     keyboard = KeyboardController()
@@ -149,28 +178,35 @@ def start_program(root):
     mouse_top_left_corner = ()
     count = 0
     recorded_data = []
-    recording = naming = False
+    recording = naming = img_capturing = False
+    functional_keys = list(button_map.values()) + [Key.shift, Key.ctrl_l, Key.esc]
 
     # Key pressed event
     def on_press(key):
-        nonlocal mouse_top_left_corner, count, recording, naming
+        nonlocal mouse_top_left_corner, count, recording, naming, img_capturing
+
+        # Start Image Capturing
+        if key == button_map["img_capturing"]:
+            print("Start Image Capturing" if not img_capturing else "Stop Image Capturing")
+            img_capturing = not img_capturing
+
         # Record Image top-left pos
-        if key == Key.shift:
+        if key == Key.shift and img_capturing:
             print(f"Top left image location: {mouse.position}")
             mouse_top_left_corner = mouse.position
 
         # Record Image bot-right pos
-        elif False and key == Key.ctrl_l and mouse_top_left_corner:
-            print(f"Image captured from {mouse_top_left_corner} to\
-                {mouse.position} is save as screen_shot_{count}.png")
+        if key == Key.ctrl_l and mouse_top_left_corner and img_capturing:
+            print(f"Image captured from {mouse_top_left_corner} to\n"
+                "{mouse.position} is save as screen_shot_{count}.png")
             end = [mouse.position[i] - mouse_top_left_corner[i] for i in range(2)]
             pyautogui.screenshot(region=(*mouse_top_left_corner, *end))\
-                .save(f"{dir_path}/images/screen_shot_{count}.png")
+                .save(f"{dir_path}/screen_shot_{count}.png")
             mouse_top_left_corner = ()
             count += 1
 
         # Start Recording
-        elif key == Key.scroll_lock:
+        if key == button_map["recording"]:
             print("Start Recording" if not recording else "Stop Recording")
             recording = not recording
 
@@ -178,16 +214,16 @@ def start_program(root):
         # Notice: if we want to record keyboard keystrokes, we will need to
         # turn off recording while naming so we can interact with naming GUI
         # without recoding those actions
-        elif key == Key.num_lock:
+        if key == button_map["naming"]:
             print("Start Naming" if not naming else "Stop Naming")
             naming = not naming
 
         # Stop Listener
-        elif key == Key.esc:
+        if key == Key.esc:
             print("Stop program")
             return False
         # Record other keys
-        elif recording:
+        elif recording and key not in functional_keys:
             recorded_data.append(keyboard2pyautogui(key_pressed = key))
             print(keyboard2pyautogui(key_pressed = key))
 
@@ -198,7 +234,7 @@ def start_program(root):
     # Mouse moved event
     def on_move(x, y):
         pass
-    
+
     # Mouse clicked event
     def on_click(x, y, button, pressed):
         if pressed and recording:
@@ -229,7 +265,7 @@ def start_program(root):
     # return recorded data to run_program inside Main App Class to save
     return recorded_data
 
-# Convert mouse events to pyautogui format
+# Convert mouse events to pyautogui format. Called in on_press()
 def mouse2pyautogui(x = None, y = None, button = None, dx = None, dy = None):
     # Mouse clicking
     if button:
@@ -246,11 +282,11 @@ def mouse2pyautogui(x = None, y = None, button = None, dx = None, dy = None):
     # Mouse horizontal scrolling
     if dx: return f"pyautogui.hscroll({dx}, x = {x}, y = {y})"
 
-# Convert keyboard events to pyautogui format
+# Convert keyboard events to pyautogui format. Called in on_press()
 def keyboard2pyautogui(key_pressed = None):
     if key_pressed:
         return f"pyautogui.press({str(key_pressed)})"
-        # for special keys (enter, tab, shift, ...) you need to compare each of them 
+        # for special keys (enter, tab, shift, ...) you need to compare each of them
         # because pynput and pyautogui name them differently. More here:
         # https://pynput.readthedocs.io/en/latest/keyboard.html#pynput.keyboard.KeyCode
         # https://pyautogui.readthedocs.io/en/latest/keyboard.html#keyboard-keys
