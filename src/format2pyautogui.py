@@ -11,11 +11,11 @@ def mouse2pyautogui(x = None, y = None, button = None, dx = None, dy = None):
     # Mouse clicking
     if button:
         if str(button) == "Button.left":
-            return f"pyautogui.click(x = {x}, y = {y}, button = 'left')"
+            return f"click({x}, {y}, duration=.25 )\n"
         elif str(button) == "Button.right":
-            return f"pyautogui.click(x = {x}, y = {y}, button = 'right')"
+            return f"rightClick({x}, {y}, duration=.25 )\n"
         elif str(button) == "Button.middle":
-            return f"pyautogui.click(x = {x}, y = {y}, button = 'middle')"
+            return f"middleClick({x}, {y}, duration=.25 )\n"
 
     # example: mouse2pyautogui(x = x, y = y, dx = dx, dy = dy)
     # Mouse vertical scrolling
@@ -27,7 +27,7 @@ def mouse2pyautogui(x = None, y = None, button = None, dx = None, dy = None):
 # Convert keyboard events to pyautogui format. Called in on_press()
 def keyboard2pyautogui(key_pressed = None, key_released = None):
     if key_pressed:
-        return f"pyautogui.press({str(key_pressed)})"
+        return f'typewrite({key})\n'
         # for special keys (enter, tab, shift, ...) you need to compare each of them
         # because pynput and pyautogui name them differently. More here:
         # https://pynput.readthedocs.io/en/latest/keyboard.html#pynput.keyboard.KeyCode
