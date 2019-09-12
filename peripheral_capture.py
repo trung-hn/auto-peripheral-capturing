@@ -11,7 +11,7 @@ from pynput.keyboard import Key
 #import keyboard
 import pyautogui, os
 import tkinter as tk
-
+import tkinter.filedialog as tk_dialog
 global Variable_Name
 
 # Popup GUI for naming
@@ -48,21 +48,21 @@ class NamingGUI(tk.Frame):
         variable_name = self.variable_name.get()
 
 # Not implemented
-#def NamingGUI():
-#    naming_root = tk.Toplevel()
-#    naming_root.wm_title("Give me a name!!")
-#
-#    # First Line
-#    tk.Label(naming_root, text = "Name of variable: ")\
-#            .grid(row = 0, column = 0, sticky = tk.W)
-#
-#    variable_name = tk.StringVar()
-#    tk.Entry(naming_root, textvariable = variable_name, width = 30)\
-#            .grid(row = 0, column = 1)
-#
-#    # Second Line
-#    tk.Button(naming_root, text = "Pick this name", command = naming_root.destroy)\
-#            .grid(row = 1, column = 0, columnspan = 2)
+def NamingGUI():
+   naming_root = tk.Toplevel()
+   naming_root.wm_title("Give me a name!!")
+
+   # First Line
+   tk.Label(naming_root, text = "Name of variable: ")\
+           .grid(row = 0, column = 0, sticky = tk.W)
+
+   variable_name = tk.StringVar()
+   tk.Entry(naming_root, textvariable = variable_name, width = 30)\
+           .grid(row = 0, column = 1)
+
+   # Second Line
+   tk.Button(naming_root, text = "Pick this name", command = naming_root.destroy)\
+           .grid(row = 1, column = 0, columnspan = 2)
 
 
 # Main GUI
@@ -106,71 +106,105 @@ class MainApplication(tk.Frame):
 
         # Third line
         tk.Button(root, text = "Start (press Esc to stop)", \
-                  command = lambda: start_program(root), fg = "white",bg = "green", \
-                  height = 1, width = 20).grid(row = 15, column = 0, columnspan = 3)
+                  command = self.call_program, fg = "white",bg = "green", \
+                  height = 1, width = 20).grid(row = 15, column = 0, columnspan = 2)
+        
+        self.save_as_button = tk.Button(root, text = "Save as", command = self.save_as,\
+                  state = tk.DISABLED, height = 1, width = 10)
+        self.save_as_button.grid(row = 15, column = 2, columnspan = 1)
+
         # Fourth line
         tk.Label(root, text = "Note:\n"
                  "Press L-Shift to Select Top Left Corner of Image\n"
                  "Press L-Ctrl to Select Bottom Right Corner of Image and Save\n",\
                  justify = tk.LEFT).grid(row = 20, column = 0, columnspan = 3, sticky = tk.W)
 
+    def call_program(self):
+        self.recorded_data = start_program(self.root)
+        # By now, the program already stopped
+
+        # Change state of save_as_button
+        self.save_as_button.config(state = "normal")
+        # Bring window to the front
+        root.attributes('-topmost', 1)
+        root.attributes('-topmost', 0)
+
+    def save_as(self):
+        # Prompt user for file path
+        file_path = tk_dialog.asksaveasfilename(defaultextension=".py")
+        # Write to file
+        with open(file_path, "w") as f:
+            f.write("import pyautogui\n\n")
+            for data in self.recorded_data:
+                f.write(data + "\n")
+
 # Main program, this is the recorder
 def start_program(root):
+    # Controller
     mouse = MouseController()
     keyboard = KeyboardController()
+
+    # Set up variable
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    start = ()
+    mouse_top_left_corner = ()
     count = 0
+    recorded_data = []
     recording = naming = False
 
-    # --------------KEYBOARD----------
+    # Key pressed event
     def on_press(key):
-        nonlocal start, count, recording, naming
-#        print(f'-----DEBUG-----: {key} pressed')
-
-        # Record Image pos top-left
+        nonlocal mouse_top_left_corner, count, recording, naming
+        # Record Image top-left pos
         if key == Key.shift:
             print(f"Top left image location: {mouse.position}")
-            start = mouse.position
+            mouse_top_left_corner = mouse.position
 
-        # Record Image pos bot-right
-        elif key == Key.ctrl_l and start:
-            print(f"""Image captured from {start} to {mouse.position} is save as screen_shot_{count}.png""")
-            end = [mouse.position[i] - start[i] for i in range(2)]
-            pyautogui.screenshot(region=(*start, *end)).save(f"{dir_path}/images/screen_shot_{count}.png")
-            start = ()
+        # Record Image bot-right pos
+        elif False and key == Key.ctrl_l and mouse_top_left_corner:
+            print(f"Image captured from {mouse_top_left_corner} to\
+                {mouse.position} is save as screen_shot_{count}.png")
+            end = [mouse.position[i] - mouse_top_left_corner[i] for i in range(2)]
+            pyautogui.screenshot(region=(*mouse_top_left_corner, *end))\
+                .save(f"{dir_path}/images/screen_shot_{count}.png")
+            mouse_top_left_corner = ()
             count += 1
 
-        # Recording
+        # Start Recording
         elif key == Key.scroll_lock:
             print("Start Recording" if not recording else "Stop Recording")
             recording = not recording
 
-        # Naming
+        # Start Naming
         # Notice: if we want to record keyboard keystrokes, we will need to
         # turn off recording while naming so we can interact with naming GUI
         # without recoding those actions
         elif key == Key.num_lock:
-            print("Not Implemented")
-            return
             print("Start Naming" if not naming else "Stop Naming")
             naming = not naming
 
-        # Stop Listener = Exit
+        # Stop Listener
         elif key == Key.esc:
             print("Stop program")
             return False
+        # Record other keys
+        elif recording:
+            recorded_data.append(keyboard2pyautogui(key_pressed = key))
+            print(keyboard2pyautogui(key_pressed = key))
 
+    # Key released event
     def on_release(key):
         pass
 
-    # --------------MOUSE-------------
+    # Mouse moved event
     def on_move(x, y):
         pass
-
+    
+    # Mouse clicked event
     def on_click(x, y, button, pressed):
         if pressed and recording:
             if naming:
+                print("Not Implemented")
+                return
                 # problem might be because of the blocking behavior of listeners
                 naming_root = tk.Tk()
                 NamingGUI(naming_root)
@@ -178,32 +212,25 @@ def start_program(root):
                 global variable_name
                 print(f"Mouse clicked at {x}, {y} with {button} is named {variable_name}")
             else:
-                print(convert2pyautogui(x = x, y = y, button = button))
-#                print(f"Mouse clicked at {x}, {y} with {button}")
+                recorded_data.append(mouse2pyautogui(x = x, y = y, button = button))
+                print(mouse2pyautogui(x = x, y = y, button = button))
 
+    # Mouse scrolled event
     def on_scroll(x, y, dx, dy):
         if recording:
-            print(convert2pyautogui(x = x, y = y, dx = dx, dy = dy))
-#            print(f"Mouse scrolled at {x}, {y}, {dx}, {dy}")
-
-    # Turn off scroll lock and num lock at the beginning of each run
-#    if KeyboardReader.is_pressed("scroll_lock"):
-#        keyboard.press(Key.num_lock)
-#        keyboard.release(Key.num_lock)
-#    if Key.scroll_lock:
-#        keyboard.press(Key.scroll_lock)
-#        keyboard.release(Key.scroll_lock)
+            recorded_data.append(mouse2pyautogui(x = x, y = y, dx = dx, dy = dy))
+            print(mouse2pyautogui(x = x, y = y, dx = dx, dy = dy))
 
     # Start listening
     with MouseListener(on_move=on_move, on_click=on_click, on_scroll=on_scroll) as listener:
         with KeyboardListener(on_press=on_press, on_release=on_release) as listener:
             listener.join()
 
-    # Bring window to the front after listening
-    root.attributes('-topmost', 1)
-    root.attributes('-topmost', 0)
+    # return recorded data to run_program inside Main App Class to save
+    return recorded_data
 
-def convert2pyautogui(x = None, y = None, button = None, dx = None, dy = None):
+# Convert mouse events to pyautogui format
+def mouse2pyautogui(x = None, y = None, button = None, dx = None, dy = None):
     # Mouse clicking
     if button:
         if str(button) == "Button.left":
@@ -213,12 +240,20 @@ def convert2pyautogui(x = None, y = None, button = None, dx = None, dy = None):
         elif str(button) == "Button.middle":
             return f"pyautogui.click(x = {x}, y = {y}, button = 'middle')"
 
-    # Mouse vert scrolling
+    # Mouse vertical scrolling
     if dy: return f"pyautogui.scroll({dy}, x = {x}, y = {y})"
 
-    # Mouse hori scrolling
+    # Mouse horizontal scrolling
     if dx: return f"pyautogui.hscroll({dx}, x = {x}, y = {y})"
 
+# Convert keyboard events to pyautogui format
+def keyboard2pyautogui(key_pressed = None):
+    if key_pressed:
+        return f"pyautogui.press({str(key_pressed)})"
+        # for special keys (enter, tab, shift, ...) you need to compare each of them 
+        # because pynput and pyautogui name them differently. More here:
+        # https://pynput.readthedocs.io/en/latest/keyboard.html#pynput.keyboard.KeyCode
+        # https://pyautogui.readthedocs.io/en/latest/keyboard.html#keyboard-keys
 
 if __name__ == "__main__":
     root = tk.Tk()
