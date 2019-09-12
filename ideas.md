@@ -18,3 +18,4 @@ Therefore, it may be best to select an image of the top left and use double clic
 
 Future features
 -recognizing shift before a key, and then processing it as hotkey(['shift'],'a')
+-add up scroll in post processing the same way that you added up typewrite 
