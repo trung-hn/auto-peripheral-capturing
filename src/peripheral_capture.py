@@ -13,74 +13,20 @@ from format2pyautogui import mouse2pyautogui, keyboard2pyautogui
 import pyautogui, os, threading
 import tkinter as tk
 import tkinter.filedialog as tk_dialog
-global Variable_Name
-
-# Popup GUI for naming
-class NamingGUI(tk.Frame):
-    def __init__(self, root, *args, **kwargs):
-        tk.Frame.__init__(self, root, *args, **kwargs)
-        self.root = root
-
-        # Title
-        self.root.title("Give me a name!!")
-
-        # Bring window to the front
-        self.root.attributes('-topmost', 1)
-        self.root.attributes('-topmost', 0)
-
-        # Run naming_gui
-        self.naming_gui()
-
-    def naming_gui(self):
-        naming_root = self.root
-        # First Line
-        tk.Label(naming_root, text = "Name of variable: ")\
-                .grid(row = 0, column = 0, sticky = tk.W)
-
-        self.variable_name = tk.StringVar()
-        tk.Entry(naming_root, textvariable = self.variable_name, width = 30)\
-                .grid(row = 0, column = 1)
-        # Second Line
-        tk.Button(naming_root, text = "Pick this name", command = self.assign_var_to_global)\
-                .grid(row = 1, column = 0, columnspan = 2)
-
-    def assign_var_to_global(self):
-        global variable_name
-        variable_name = self.variable_name.get()
-
-# Not implemented
-#def NamingGUI():
-#   naming_root = tk.Toplevel()
-#   naming_root.wm_title("Give me a name!!")
-#
-#   # First Line
-#   tk.Label(naming_root, text = "Name of variable: ")\
-#           .grid(row = 0, column = 0, sticky = tk.W)
-#
-#   variable_name = tk.StringVar()
-#   tk.Entry(naming_root, textvariable = variable_name, width = 30)\
-#           .grid(row = 0, column = 1)
-#
-#   # Second Line
-#   tk.Button(naming_root, text = "Pick this name", command = naming_root.destroy)\
-#           .grid(row = 1, column = 0, columnspan = 2)
-
 
 # Main GUI
 class MainApplication(tk.Frame):
     def __init__(self, root, *args, **kwargs):
         tk.Frame.__init__(self, root, *args, **kwargs)
         self.root = root
-
         self.recorded_data = []
-        # Title
         self.root.title("Super Recorder")
-
+        # This is used for naming
+        self.naming_detour = False
         # Bring window to the front
         self.root.attributes('-topmost', 1)
         self.root.attributes('-topmost', 0)
 
-        # Run main_gui
         self.main_gui()
 
     def main_gui(self):
@@ -140,9 +86,12 @@ class MainApplication(tk.Frame):
         button_map = self.get_button_map()
 
         # Run program
-        self.recorded_data += start_program(self.root, button_map)
+        self.recorded_data += start_program(self, button_map)
 
         # By now, the program already stopped
+        if self.naming_detour: 
+            self.run_naming_detour()
+            self.naming_detour = False
 
         # Change properties of buttons
         self.save_as_button.config(state = "normal")
@@ -152,7 +101,7 @@ class MainApplication(tk.Frame):
         root.attributes('-topmost', 1)
         root.attributes('-topmost', 0)
 
-    def get_button_map(self):
+    def get_button_map(self) -> list:
         # Map Options to Keys
         option_map = {"Scroll Lock" : Key.scroll_lock,
                       "Num Lock" : Key.num_lock,
@@ -167,6 +116,28 @@ class MainApplication(tk.Frame):
         for key, val in button_map.items():
             button_map[key] = option_map[str(val)]
         return button_map
+    
+    def init_naming_detour(self):
+        self.naming_detour = True
+
+    def run_naming_detour(self):
+        self.naming_root = tk.Toplevel()
+        self.naming_root.title("Give me a name!")
+        # Label
+        tk.Label(self.naming_root, text = "Name of variable: ")\
+                .grid(row = 0, column = 0, sticky = tk.W)
+        # Text Bos
+        self.variable_name = tk.StringVar()
+        tk.Entry(self.naming_root, textvariable = self.variable_name, width = 30)\
+                .grid(row = 0, column = 1)
+        # Button
+        tk.Button(self.naming_root, text = "Pick this name", command = self.save_variable_name)\
+                .grid(row = 1, column = 0, columnspan = 2)
+    
+    def save_variable_name(self):
+        var = self.variable_name.get()
+        self.recorded_data.append(var.replace(" ", "_"))
+        self.naming_root.destroy()
 
     def save_as(self):
         # Prompt user for file path
@@ -178,7 +149,8 @@ class MainApplication(tk.Frame):
                 f.write(data + "\n")
 
 # Main program, this is the recorder
-def start_program(root, button_map):
+def start_program(self, button_map : list) -> list:
+
     # Controller
     mouse = MouseController()
     keyboard = KeyboardController()
@@ -221,9 +193,6 @@ def start_program(root, button_map):
             recording = not recording
 
         # Start Naming
-        # Notice: if we want to record keyboard keystrokes, we will need to
-        # turn off recording while naming so we can interact with naming GUI
-        # without recoding those actions
         if key == button_map["naming"]:
             print("Start Naming" if not naming else "Stop Naming")
             naming = not naming
@@ -232,6 +201,7 @@ def start_program(root, button_map):
         if key == Key.esc:
             print("Stop program")
             return False
+
         # Record other keys
         elif recording and key not in functional_keys:
             recorded_data.append(keyboard2pyautogui(key_pressed = key))
@@ -239,10 +209,8 @@ def start_program(root, button_map):
 
     # Key released event
     def on_release(key):
-#        if recording and key not in functional_keys:
-#            recorded_data.append(keyboard2pyautogui(key_released = key))
-#            print(keyboard2pyautogui(key_released = key))
         pass
+
     # Mouse moved event
     def on_move(x, y):
         pass
@@ -251,16 +219,8 @@ def start_program(root, button_map):
     def on_click(x, y, button, pressed):
         if pressed and recording:
             if naming:
-                print("Not Implemented")
-                return
-                # problem might be because of the blocking behavior of listeners
-                naming_root = tk.Tk()
-                NamingGUI(naming_root)
-                x = threading.Thread(target = naming_root.mainloop)
-                x.start()
-#                naming_root.mainloop()
-                global variable_name
-                print(f"Mouse clicked at {x}, {y} with {button} is named {variable_name}")
+                self.init_naming_detour()
+                listener.stop()
             else:
                 recorded_data.append(mouse2pyautogui(x = x, y = y, button = button))
                 print(mouse2pyautogui(x = x, y = y, button = button))
