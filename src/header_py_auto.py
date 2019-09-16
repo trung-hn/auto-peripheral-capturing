@@ -28,7 +28,6 @@ def find(image):
 
 
 def start_mod_file_builder():
-
     # open a new tab with MoD
     hotkey('winleft', 'r', duration=.25)
     sleep(.25)
@@ -41,4 +40,3 @@ start_mod_file_builder()
 sleep(5)
 
 #### end of header ###
-
