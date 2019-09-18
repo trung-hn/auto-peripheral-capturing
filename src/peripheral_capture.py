@@ -20,7 +20,10 @@ class MainApplication(tk.Frame):
     def __init__(self, root, *args, **kwargs):
         tk.Frame.__init__(self, root, *args, **kwargs)
         self.root = root
+        self.button_map = dict()
         self.recorded_data = []
+        self.img_trigger_key = tk.StringVar(root)
+        self.recording_trigger_key = tk.StringVar(root)
         self.root.title("Super Recorder")
         # Bring window to the front
         self.root.attributes('-topmost', 1)
@@ -33,33 +36,19 @@ class MainApplication(tk.Frame):
 
         # Recording Options
         tk.Label(root, text="Press this key to start recording:").grid(row=0, column=0, sticky=tk.W)
-
-        self.recording_trigger_key = tk.StringVar(root)
         self.recording_trigger_key.set("Scroll Lock")
         choices = {"None", "Scroll Lock", "Num Lock", "Caps Lock"}
-        recording_button_option = tk.OptionMenu(root, self.recording_trigger_key, *choices)
-        recording_button_option.grid(row=0, column=2)
+        tk.OptionMenu(root, self.recording_trigger_key, *choices).grid(row=0, column=2)
 
         # Image Capturing Options
-        tk.Label(root, text="Press this key to start Image capturing:") \
-            .grid(row=2, column=0, sticky=tk.W)
-
-        self.img_trigger_key = tk.StringVar(root)
-        self.img_trigger_key.set("Caps Lock")
+        tk.Label(root, text="Press this key to start Image capturing:").grid(row=2, column=0, sticky=tk.W)
+        self.img_trigger_key.set("Num Lock")
         choices = {"None", "Scroll Lock", "Num Lock", "Caps Lock"}
-        img_button_option = tk.OptionMenu(root, self.img_trigger_key, *choices)
-        img_button_option.grid(row=2, column=2)
+        tk.OptionMenu(root, self.img_trigger_key, *choices).grid(row=2, column=2)
 
         # Start button
-        self.start_button = tk.Button(root, text="Start (press Esc to stop)",
-                                      command=self.call_program, fg="white", bg="green",
-                                      height=1, width=20)
-        self.start_button.grid(row=15, column=0, columnspan=2)
-
-        # Save as button
-        self.save_as_button = tk.Button(root, text="Save as", command=self.save_as,
-                                        state=tk.DISABLED, height=1, width=10)
-        self.save_as_button.grid(row=15, column=2, columnspan=1)
+        start_button = tk.Button(root, text="Choose save location and Start Program", command=self.call_program,
+                                 fg="white", bg="green", height=1, width=40).grid(row=15, column=0, columnspan=2)
 
         # Note
         tk.Label(root, text="Note:\n"
@@ -75,10 +64,6 @@ class MainApplication(tk.Frame):
 
         # Run program, data will be added to self.recorded_data
         self.start_program()
-
-        # Change properties of buttons
-        self.save_as_button.config(state="normal")
-        self.start_button.config(text="Continue")
 
         # Bring window to the front
         root.attributes('-topmost', 1)
