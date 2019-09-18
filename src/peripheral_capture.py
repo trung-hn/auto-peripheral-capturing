@@ -19,11 +19,14 @@ import tkinter.filedialog as tk_dialog
 class MainApplication(tk.Frame):
     def __init__(self, root, *args, **kwargs):
         tk.Frame.__init__(self, root, *args, **kwargs)
+        # Init variables
         self.root = root
         self.button_map = dict()
         self.recorded_data = []
         self.img_trigger_key = tk.StringVar(root)
         self.recording_trigger_key = tk.StringVar(root)
+        self.file_path = ""
+
         self.root.title("Super Recorder")
         # Bring window to the front
         self.root.attributes('-topmost', 1)
@@ -52,16 +55,16 @@ class MainApplication(tk.Frame):
 
         # Note
         tk.Label(root, text="Note:\n"
-                            "Press Caps Lock to turn on Image capture mode\n"
                             "Press L-Shift to Select Top Left Corner of Image\n"
-                            "Press L-Ctrl to Select Bottom Right Corner of Image and Save\n",
+                            "Press L-Ctrl to Select Bottom Right Corner of Image and Save\n"
+                            "Images will be saved in the same folder as script file.",
                  justify=tk.LEFT).grid(row=20, column=0, columnspan=1, sticky=tk.W)
 
     def call_program(self):
 
         # Prompt user for file path
-        file_path = tk_dialog.asksaveasfilename(defaultextension=".py")
-        if not file_path: return
+        self.file_path = tk_dialog.asksaveasfilename(defaultextension=".py")
+        if not self.file_path: return
 
         # Button map
         self.button_map = self.get_button_map()
@@ -70,7 +73,7 @@ class MainApplication(tk.Frame):
         self.start_listener()
 
         # Save recorded_data to a file. This is handled in format2pyautogui.py
-        write_output_file(recorded_data=self.recorded_data, save_file_path=file_path)
+        write_output_file(recorded_data=self.recorded_data, save_file_path=self.file_path)
 
         # Bring window to the front
         root.attributes('-topmost', 1)
@@ -102,12 +105,19 @@ class MainApplication(tk.Frame):
         keyboard = KeyboardController()
 
         # Set up variable
-        dir_path = os.path.dirname(os.path.realpath(__file__))
+        save_dir = self.file_path.rsplit("/", 1)[0]
         mouse_top_left_corner = ()
         count = 0
         recording = img_capturing = False
         # These keys won't be recorded
         functional_keys = list(self.button_map.values()) + [Key.esc]
+
+        # Mkdir /images to store images
+        def make_image_dir(path):
+            try:
+                os.mkdir(path + "/images")
+            except FileExistsError:
+                pass
 
         # Key pressed event
         def on_press(key):
@@ -117,7 +127,10 @@ class MainApplication(tk.Frame):
             if key == self.button_map["img_capturing"]:
                 print("Start Image Capturing" if not img_capturing else "Stop Image Capturing")
                 img_capturing = not img_capturing
-
+                if recording:
+                    print("Stop Recording")
+                    recording = False
+                make_image_dir(save_dir)
             # Record Image top-left pos
             if key == Key.shift and img_capturing:
                 print(f"Top left image location: {mouse.position}")
@@ -125,21 +138,24 @@ class MainApplication(tk.Frame):
 
             # Record Image bot-right pos
             if key == Key.ctrl_l and mouse_top_left_corner and img_capturing:
-                print(f"Image captured from {mouse_top_left_corner} to\n"
-                      "{mouse.position} is save as screen_shot_{count}.png")
+                print(f"Image captured from {mouse_top_left_corner} to "
+                      f"{mouse.position} is save as screen_shot_{count}.png")
                 end = [mouse.position[i] - mouse_top_left_corner[i] for i in range(2)]
                 # TODO replace this name/path with user given name
                 save_image_name = f'screen_shot_{count}'
-                save_image_path = f"{dir_path}\{save_image_name}.png"
+                save_image_path = f"{save_dir}/images/{save_image_name}.png"
                 pyautogui.screenshot(region=(*mouse_top_left_corner, *end)).save(save_image_path)
                 mouse_top_left_corner = ()
                 count += 1
-                self.recorded_data.append(img2pyautogui(save_image_path, save_image_name))
+                self.recorded_data.append(img2pyautogui(f"{save_dir}/images/", save_image_name))
 
             # Start Recording
             if key == self.button_map["recording"]:
                 print("Start Recording" if not recording else "Stop Recording")
                 recording = not recording
+                if img_capturing:
+                    print("Stop Image Capturing")
+                    img_capturing = False
 
             # Stop Listener
             if key == Key.esc:
@@ -172,7 +188,7 @@ class MainApplication(tk.Frame):
                 print(mouse2pyautogui(x=x, y=y, dx=dx, dy=dy))
 
         # Start listening
-        with MouseListener(on_move=on_move, on_click=on_click, on_scroll=on_scroll) as listener:
+        with MouseListener(on_move=on_move, on_click=on_click, on_scroll=on_scroll):
             with KeyboardListener(on_press=on_press, on_release=on_release) as listener:
                 listener.join()
 

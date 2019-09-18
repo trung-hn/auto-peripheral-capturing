@@ -39,9 +39,9 @@ def keyboard2pyautogui(key_pressed=None, key_released=None):
 
 
 def img2pyautogui(save_image_path, save_image_name):
-    image_code = f'{save_image_name} = r\'{save_image_path}\'\n'
-    f'select({save_image_name})\n'
-    f'sleep(1.5)\n\n'
+    image_code = f'{save_image_name} = r\'{save_image_path}\'\n'\
+                 f'select({save_image_name})\n'\
+                 f'sleep(1.5)\n\n'
     return image_code
 
 
