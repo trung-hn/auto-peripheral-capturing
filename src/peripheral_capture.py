@@ -38,32 +38,39 @@ class MainApplication(tk.Frame):
         tk.Label(root, text="Press this key to start recording:").grid(row=0, column=0, sticky=tk.W)
         self.recording_trigger_key.set("Scroll Lock")
         choices = {"None", "Scroll Lock", "Num Lock", "Caps Lock"}
-        tk.OptionMenu(root, self.recording_trigger_key, *choices).grid(row=0, column=2)
+        tk.OptionMenu(root, self.recording_trigger_key, *choices).grid(row=0, column=1)
 
         # Image Capturing Options
         tk.Label(root, text="Press this key to start Image capturing:").grid(row=2, column=0, sticky=tk.W)
         self.img_trigger_key.set("Num Lock")
         choices = {"None", "Scroll Lock", "Num Lock", "Caps Lock"}
-        tk.OptionMenu(root, self.img_trigger_key, *choices).grid(row=2, column=2)
+        tk.OptionMenu(root, self.img_trigger_key, *choices).grid(row=2, column=1)
 
         # Start button
         start_button = tk.Button(root, text="Choose save location and Start Program", command=self.call_program,
-                                 fg="white", bg="green", height=1, width=40).grid(row=15, column=0, columnspan=2)
+                                 fg="white", bg="green", height=2, width=30).grid(row=15, column=0, columnspan=2)
 
         # Note
         tk.Label(root, text="Note:\n"
                             "Press Caps Lock to turn on Image capture mode\n"
                             "Press L-Shift to Select Top Left Corner of Image\n"
                             "Press L-Ctrl to Select Bottom Right Corner of Image and Save\n",
-                 justify=tk.LEFT).grid(row=20, column=0, columnspan=3, sticky=tk.W)
+                 justify=tk.LEFT).grid(row=20, column=0, columnspan=1, sticky=tk.W)
 
     def call_program(self):
+
+        # Prompt user for file path
+        file_path = tk_dialog.asksaveasfilename(defaultextension=".py")
+        if not file_path: return
 
         # Button map
         self.button_map = self.get_button_map()
 
         # Run program, data will be added to self.recorded_data
-        self.start_program()
+        self.start_listener()
+
+        # Save recorded_data to a file. This is handled in format2pyautogui.py
+        write_output_file(recorded_data=self.recorded_data, save_file_path=file_path)
 
         # Bring window to the front
         root.attributes('-topmost', 1)
@@ -88,15 +95,8 @@ class MainApplication(tk.Frame):
             button_map[key] = option_map[str(val)]
         return button_map
 
-    # Save recorded_data to a file. This is handled in format2pyautogui.py
-    def save_as(self) -> None:
-        # Prompt user for file path
-        file_path = tk_dialog.asksaveasfilename(defaultextension=".py")
-        # Write to file
-        write_output_file(recorded_data=self.recorded_data, save_file_path=file_path)
-
     # Main program, this is the recorder
-    def start_program(self) -> None:
+    def start_listener(self) -> None:
         # Controller
         mouse = MouseController()
         keyboard = KeyboardController()
