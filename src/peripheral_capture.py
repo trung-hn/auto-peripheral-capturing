@@ -22,8 +22,6 @@ class MainApplication(tk.Frame):
         self.root = root
         self.recorded_data = []
         self.root.title("Super Recorder")
-        # This is used for naming
-        self.naming_detour = False
         # Bring window to the front
         self.root.attributes('-topmost', 1)
         self.root.attributes('-topmost', 0)
@@ -41,15 +39,6 @@ class MainApplication(tk.Frame):
         choices = {"None", "Scroll Lock", "Num Lock", "Caps Lock"}
         recording_button_option = tk.OptionMenu(root, self.recording_trigger_key, *choices)
         recording_button_option.grid(row=0, column=2)
-
-        # Naming Options
-        tk.Label(root, text="Press this key to start naming:").grid(row=1, column=0, sticky=tk.W)
-
-        self.naming_trigger_key = tk.StringVar(root)
-        self.naming_trigger_key.set("Num Lock")
-        choices = {"None", "Scroll Lock", "Num Lock", "Caps Lock"}
-        naming_button_option = tk.OptionMenu(root, self.naming_trigger_key, *choices)
-        naming_button_option.grid(row=1, column=2)
 
         # Image Capturing Options
         tk.Label(root, text="Press this key to start Image capturing:") \
@@ -87,11 +76,6 @@ class MainApplication(tk.Frame):
         # Run program, data will be added to self.recorded_data
         self.start_program()
 
-        # By now, the program already stopped
-        if self.naming_detour:
-            self.run_naming_detour()
-            self.naming_detour = False
-
         # Change properties of buttons
         self.save_as_button.config(state="normal")
         self.start_button.config(text="Continue")
@@ -112,34 +96,12 @@ class MainApplication(tk.Frame):
         # Map var_name to chosen button from main GUI
         button_map = {
             "recording": self.recording_trigger_key.get(),
-            "naming": self.naming_trigger_key.get(),
             "img_capturing": self.img_trigger_key.get(),
         }
         # Map var_name to Keys
         for key, val in button_map.items():
             button_map[key] = option_map[str(val)]
         return button_map
-
-    # Run naming_detour, new window pops up and ask for name.
-    def run_naming_detour(self) -> None:
-        self.naming_root = tk.Toplevel()
-        self.naming_root.title("Give me a name!")
-        # Label
-        tk.Label(self.naming_root, text="Name of variable: ") \
-            .grid(row=0, column=0, sticky=tk.W)
-        # Text Box
-        self.variable_name = tk.StringVar()
-        tk.Entry(self.naming_root, textvariable=self.variable_name, width=30) \
-            .grid(row=0, column=1)
-        # Button
-        tk.Button(self.naming_root, text="Pick this name", command=self.save_variable_name) \
-            .grid(row=1, column=0, columnspan=2)
-
-    # Save variable_name to instance variable and close naming window
-    def save_variable_name(self) -> None:
-        var = self.variable_name.get()
-        self.recorded_data.append(var.replace(" ", "_"))
-        self.naming_root.destroy()
 
     # Save recorded_data to a file. This is handled in format2pyautogui.py
     def save_as(self) -> None:
@@ -158,13 +120,13 @@ class MainApplication(tk.Frame):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         mouse_top_left_corner = ()
         count = 0
-        recording = naming = img_capturing = False
+        recording = img_capturing = False
         # These keys won't be recorded
         functional_keys = list(self.button_map.values()) + [Key.esc]
 
         # Key pressed event
         def on_press(key):
-            nonlocal mouse_top_left_corner, count, recording, naming, img_capturing
+            nonlocal mouse_top_left_corner, count, recording, img_capturing
 
             # Start Image Capturing
             if key == self.button_map["img_capturing"]:
@@ -194,11 +156,6 @@ class MainApplication(tk.Frame):
                 print("Start Recording" if not recording else "Stop Recording")
                 recording = not recording
 
-            # Start Naming
-            if key == self.button_map["naming"]:
-                print("Start Naming" if not naming else "Stop Naming")
-                naming = not naming
-
             # Stop Listener
             if key == Key.esc:
                 print("Stop program")
@@ -220,13 +177,8 @@ class MainApplication(tk.Frame):
         # Mouse clicked event
         def on_click(x, y, button, pressed):
             if pressed and recording:
-                if naming:
-                    # Start naming detour
-                    self.naming_detour = True
-                    listener.stop()
-                else:
-                    self.recorded_data.append(mouse2pyautogui(x=x, y=y, button=button))
-                    print(mouse2pyautogui(x=x, y=y, button=button))
+                self.recorded_data.append(mouse2pyautogui(x=x, y=y, button=button))
+                print(mouse2pyautogui(x=x, y=y, button=button))
 
         # Mouse scrolled event
         def on_scroll(x, y, dx, dy):
