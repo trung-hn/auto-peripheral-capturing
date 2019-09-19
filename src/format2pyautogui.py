@@ -84,7 +84,7 @@ def consolidate_typewrite(file, recorded_data):
                 typewrite_content = typewrite_content[:-1]
             # only looks for the expand window command
             if ('Key.cmd' in line) and 'Key.up' in recorded_data[index+1]:
-                expand_command = f'hotkey(\'winleft\', \'up\', duration=set_duration)'
+                expand_command = f'pyautogui.hotkey(\'winleft\', \'up\', duration=set_duration)'
                 file.write(expand_command + "\n")
             # add shift later ..
             if len(line) == 14:
