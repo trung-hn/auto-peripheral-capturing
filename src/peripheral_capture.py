@@ -9,8 +9,7 @@ from pynput.keyboard import Listener as KeyboardListener
 from pynput.keyboard import Controller as KeyboardController
 from pynput.keyboard import Key
 from src.format2pyautogui import mouse2pyautogui, keyboard2pyautogui, img2pyautogui, write_output_file
-# import keyboard
-import pyautogui, os, threading, webbrowser
+import pyautogui, os, webbrowser
 import tkinter as tk
 import tkinter.filedialog as tk_dialog
 
@@ -51,11 +50,11 @@ class MainApplication(tk.Frame):
         tk.OptionMenu(root, self.img_trigger_key, *choices).grid(row=2, column=1)
 
         # Start button
-        start_button = tk.Button(root, text="Choose Save Location and Start Program", command=self.call_program,
+        start_button = tk.Button(root, text="Choose Save Location\n& Start Program", command=self.call_program,
                                  fg="white", bg="green", height=2, width=30, cursor="hand2").grid(row=15, column=0,
                                                                                                   columnspan=2)
 
-        # Note
+        # Note TODO: more detail instruction
         tk.Label(root, text="Note:\n"
                             "Press L-Shift to Select Top Left Corner of Image\n"
                             "Press L-Ctrl to Select Bottom Right Corner of Image and Save\n"
@@ -79,7 +78,7 @@ class MainApplication(tk.Frame):
     def call_program(self):
 
         # Message
-        self.message.config(text="APPLICATION IS RUNNING", bg="green")
+        self.message.config(text="APPLICATION IS RUNNING. PRESS ESC TO STOP AND SAVE", bg="green")
 
         # Prompt user for file path
         self.file_path = tk_dialog.asksaveasfilename(defaultextension=".py")
@@ -149,7 +148,8 @@ class MainApplication(tk.Frame):
 
             # Start Image Capturing
             if key == self.button_map["img_capturing"]:
-                print("Start Image Capturing" if not img_capturing else "Stop Image Capturing")
+                print("Start Image Capturing. Recording is temporarily suspended" if not img_capturing else "Stop "
+                                                                                                            "Image Capturing")
                 img_capturing = not img_capturing
                 make_image_dir(save_dir)
 
