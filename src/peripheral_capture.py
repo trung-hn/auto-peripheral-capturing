@@ -10,7 +10,7 @@ from pynput.keyboard import Controller as KeyboardController
 from pynput.keyboard import Key
 from src.format2pyautogui import mouse2pyautogui, keyboard2pyautogui, img2pyautogui, write_output_file
 # import keyboard
-import pyautogui, os, threading
+import pyautogui, os, threading, webbrowser
 import tkinter as tk
 import tkinter.filedialog as tk_dialog
 
@@ -52,7 +52,8 @@ class MainApplication(tk.Frame):
 
         # Start button
         start_button = tk.Button(root, text="Choose Save Location and Start Program", command=self.call_program,
-                                 fg="white", bg="green", height=2, width=30).grid(row=15, column=0, columnspan=2)
+                                 fg="white", bg="green", height=2, width=30, cursor="hand2").grid(row=15, column=0,
+                                                                                                  columnspan=2)
 
         # Note
         tk.Label(root, text="Note:\n"
@@ -61,8 +62,18 @@ class MainApplication(tk.Frame):
                             "Images will be saved in the same folder as script file.",
                  justify=tk.LEFT).grid(row=20, column=0, columnspan=1, sticky=tk.W)
 
+        # Message
         self.message = tk.Label(root, text="...", fg="white", bg="green", justify=tk.LEFT)
         self.message.grid(row=30, column=0, columnspan=3, sticky="ew", )
+
+        # Credit
+        link1 = tk.Label(root, text="Credit: Trung Hoang", fg="blue", cursor="hand2")
+        link1.grid(row=40, column=0, columnspan=1, sticky="e")
+        link1.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/trung-hn"))
+
+        link1 = tk.Label(root, text="and Paxton Wills", fg="blue", cursor="hand2")
+        link1.grid(row=40, column=1, columnspan=1, sticky="w")
+        link1.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/PaxAmericana"))
 
     # Start Button Action
     def call_program(self):
