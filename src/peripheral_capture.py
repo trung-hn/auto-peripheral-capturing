@@ -26,6 +26,7 @@ class MainApplication(tk.Frame):
         self.img_trigger_key = tk.StringVar(root)
         self.recording_trigger_key = tk.StringVar(root)
         self.file_path = ""
+        self.message = None
 
         self.root.title("Super Recorder")
         # Bring window to the front
@@ -50,7 +51,7 @@ class MainApplication(tk.Frame):
         tk.OptionMenu(root, self.img_trigger_key, *choices).grid(row=2, column=1)
 
         # Start button
-        start_button = tk.Button(root, text="Choose save location and Start Program", command=self.call_program,
+        start_button = tk.Button(root, text="Choose Save Location and Start Program", command=self.call_program,
                                  fg="white", bg="green", height=2, width=30).grid(row=15, column=0, columnspan=2)
 
         # Note
@@ -60,11 +61,20 @@ class MainApplication(tk.Frame):
                             "Images will be saved in the same folder as script file.",
                  justify=tk.LEFT).grid(row=20, column=0, columnspan=1, sticky=tk.W)
 
+        self.message = tk.Label(root, text="...", fg="white", bg="green", justify=tk.LEFT)
+        self.message.grid(row=30, column=0, columnspan=3, sticky="ew", )
+
+    # Start Button Action
     def call_program(self):
+
+        # Message
+        self.message.config(text="APPLICATION IS RUNNING", bg="green")
 
         # Prompt user for file path
         self.file_path = tk_dialog.asksaveasfilename(defaultextension=".py")
-        if not self.file_path: return
+        if not self.file_path:
+            self.message.config(text="NO FILE WAS CHOSEN", bg="#f04a4a")
+            return
 
         # Button map
         self.button_map = self.get_button_map()
@@ -74,6 +84,9 @@ class MainApplication(tk.Frame):
 
         # Save recorded_data to a file. This is handled in format2pyautogui.py
         write_output_file(recorded_data=self.recorded_data, save_file_path=self.file_path)
+
+        # Message
+        self.message.config(text="APPLICATION STOPPED, DATA IS SAVED", bg="#3281a8")
 
         # Bring window to the front
         root.attributes('-topmost', 1)
@@ -127,10 +140,8 @@ class MainApplication(tk.Frame):
             if key == self.button_map["img_capturing"]:
                 print("Start Image Capturing" if not img_capturing else "Stop Image Capturing")
                 img_capturing = not img_capturing
-                if recording:
-                    print("Stop Recording")
-                    recording = False
                 make_image_dir(save_dir)
+
             # Record Image top-left pos
             if key == Key.shift and img_capturing:
                 print(f"Top left image location: {mouse.position}")
@@ -141,21 +152,17 @@ class MainApplication(tk.Frame):
                 print(f"Image captured from {mouse_top_left_corner} to "
                       f"{mouse.position} is save as screen_shot_{count}.png")
                 end = [mouse.position[i] - mouse_top_left_corner[i] for i in range(2)]
-                # TODO replace this name/path with user given name
                 save_image_name = f'screen_shot_{count}'
                 save_image_path = f"{save_dir}/images/{save_image_name}.png"
                 pyautogui.screenshot(region=(*mouse_top_left_corner, *end)).save(save_image_path)
+                self.recorded_data.append(img2pyautogui(f"{save_dir}/images/", save_image_name))
                 mouse_top_left_corner = ()
                 count += 1
-                self.recorded_data.append(img2pyautogui(f"{save_dir}/images/", save_image_name))
 
             # Start Recording
             if key == self.button_map["recording"]:
                 print("Start Recording" if not recording else "Stop Recording")
                 recording = not recording
-                if img_capturing:
-                    print("Stop Image Capturing")
-                    img_capturing = False
 
             # Stop Listener
             if key == Key.esc:
@@ -163,7 +170,7 @@ class MainApplication(tk.Frame):
                 return False
 
             # Record other keys
-            elif recording and key not in functional_keys:
+            elif recording and (not img_capturing) and (key not in functional_keys):
                 self.recorded_data.append(keyboard2pyautogui(key_pressed=key))
                 print(keyboard2pyautogui(key_pressed=key))
 
@@ -177,13 +184,13 @@ class MainApplication(tk.Frame):
 
         # Mouse clicked event
         def on_click(x, y, button, pressed):
-            if pressed and recording:
+            if pressed and recording and (not img_capturing):
                 self.recorded_data.append(mouse2pyautogui(x=x, y=y, button=button))
                 print(mouse2pyautogui(x=x, y=y, button=button))
 
         # Mouse scrolled event
         def on_scroll(x, y, dx, dy):
-            if recording:
+            if recording and (not img_capturing):
                 self.recorded_data.append(mouse2pyautogui(x=x, y=y, dx=dx, dy=dy))
                 print(mouse2pyautogui(x=x, y=y, dx=dx, dy=dy))
 
