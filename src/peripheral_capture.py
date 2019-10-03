@@ -8,7 +8,7 @@ from pynput.mouse import Controller as MouseController
 from pynput.keyboard import Listener as KeyboardListener
 from pynput.keyboard import Controller as KeyboardController
 from pynput.keyboard import Key
-from src.format2pyautogui import mouse2pyautogui, keyboard2pyautogui, img2pyautogui, write_output_file
+from format2pyautogui import mouse2pyautogui, keyboard2pyautogui, img2pyautogui, write_output_file
 # import keyboard
 import pyautogui, os, threading, webbrowser
 import tkinter as tk
