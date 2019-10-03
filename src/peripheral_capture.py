@@ -51,11 +51,14 @@ class MainApplication(tk.Frame):
         tk.OptionMenu(root, self.img_trigger_key, *choices).grid(row=2, column=1)
 
         # Start button
-        start_button = tk.Button(root, text="Choose Save Location and Start Program", command=self.call_program,
-                                 fg="white", bg="green", height=2, width=30, cursor="hand2").grid(row=15, column=0,
-                                                                                                  columnspan=2)
+        start_button = tk.Button(root, text="Choose Save Location\n& Start Program", command=self.call_program,
+                                 fg="white", bg="green", height=2, width=25, cursor="hand2").grid(row=15, column=0)
+        # Go to button
+        self.go_to_button = tk.Button(root, text="Open Save Folder", state=tk.DISABLED,
+                                      height=2, width=15, cursor="hand2", command=self.open_save_dir)
+        self.go_to_button.grid(row=15, column=1)
 
-        # Note
+        # TODO: more detail instruction
         tk.Label(root, text="Note:\n"
                             "Press L-Shift to Select Top Left Corner of Image\n"
                             "Press L-Ctrl to Select Bottom Right Corner of Image and Save\n"
@@ -75,11 +78,16 @@ class MainApplication(tk.Frame):
         link1.grid(row=40, column=1, columnspan=1, sticky="w")
         link1.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/PaxAmericana"))
 
+    # Open Save Folder Action
+    def open_save_dir(self):
+        replaced_slash = self.file_path.replace("/", "\\")
+        subprocess.Popen(fr'explorer /select, "{replaced_slash}"')
+
     # Start Button Action
     def call_program(self):
 
         # Message
-        self.message.config(text="APPLICATION IS RUNNING", bg="green")
+        self.message.config(text="APPLICATION IS RUNNING. PRESS ESC TO STOP AND SAVE", bg="green")
 
         # Prompt user for file path
         self.file_path = tk_dialog.asksaveasfilename(defaultextension=".py")
@@ -92,6 +100,9 @@ class MainApplication(tk.Frame):
 
         # Run program, data will be added to self.recorded_data
         self.start_listener()
+
+        # Change button state to normal
+        self.go_to_button.config(state=tk.NORMAL, fg="white", bg="#3281a8")
 
         # Save recorded_data to a file. This is handled in format2pyautogui.py
         write_output_file(recorded_data=self.recorded_data, save_file_path=self.file_path)
@@ -149,7 +160,8 @@ class MainApplication(tk.Frame):
 
             # Start Image Capturing
             if key == self.button_map["img_capturing"]:
-                print("Start Image Capturing" if not img_capturing else "Stop Image Capturing")
+                print("Start Image Capturing. Recording is temporarily suspended" if not img_capturing else "Stop "
+                                                                                                            "Image Capturing")
                 img_capturing = not img_capturing
                 make_image_dir(save_dir)
 
@@ -163,10 +175,10 @@ class MainApplication(tk.Frame):
                 print(f"Image captured from {mouse_top_left_corner} to "
                       f"{mouse.position} is save as screen_shot_{count}.png")
                 end = [mouse.position[i] - mouse_top_left_corner[i] for i in range(2)]
-                save_image_name = f'screen_shot_{count}'
+                save_image_name = f"screen_shot_{count}"
                 save_image_path = f"{save_dir}/images/{save_image_name}.png"
                 pyautogui.screenshot(region=(*mouse_top_left_corner, *end)).save(save_image_path)
-                self.recorded_data.append(img2pyautogui(f"{save_dir}/images/", save_image_name))
+                self.recorded_data.append(img2pyautogui(f"{save_image_path}", save_image_name))
                 mouse_top_left_corner = ()
                 count += 1
 

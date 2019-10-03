@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Sep 12 14:07:08 2019
+# Date: 9/12/2019
+# File: format2pyautogui.py
+# Name: Trung Hoang, Paxton Wills
+# Desc: Contact Paxton Wills for more info
 
-@author: hoangt1
-"""
 import os
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -14,11 +13,11 @@ def mouse2pyautogui(x=None, y=None, button=None, dx=None, dy=None):
     # Mouse clicking
     if button:
         if str(button) == "Button.left":
-            return f"click({x}, {y}, duration=.25 )"
+            return f"pyautogui.click({x}, {y}, duration=set_duration)"
         elif str(button) == "Button.right":
-            return f"rightClick({x}, {y}, duration=.25 )"
+            return f"pyautogui.rightClick({x}, {y}, duration=set_duration)"
         elif str(button) == "Button.middle":
-            return f"middleClick({x}, {y}, duration=.25 )"
+            return f"pyautogui.middleClick({x}, {y}, duration=set_duration)"
 
     # example: mouse2pyautogui(x = x, y = y, dx = dx, dy = dy)
     # Mouse vertical scrolling
@@ -39,8 +38,8 @@ def keyboard2pyautogui(key_pressed=None, key_released=None):
 
 
 def img2pyautogui(save_image_path, save_image_name):
-    image_code = f'{save_image_name} = r\'{save_image_path}\'\n'\
-                 f'select({save_image_name})\n'\
+    image_code = f'{save_image_name} = r\'{save_image_path}\'\n' \
+                 f'find_and_click_image({save_image_name})\n' \
                  f'sleep(1.5)\n\n'
     return image_code
 
@@ -48,7 +47,6 @@ def img2pyautogui(save_image_path, save_image_name):
 # write recorded data to output file selected by user
 def write_output_file(recorded_data: list, save_file_path: str, header_file_path=None) -> None:
     global dir_path
-    print(recorded_data)
     with open(save_file_path, 'w') as file:
         header_file_path = f'{dir_path}\header_py_auto.py'
         if header_file_path:
@@ -56,6 +54,8 @@ def write_output_file(recorded_data: list, save_file_path: str, header_file_path
 
         # clean up typewrite comments
         consolidate_typewrite(file, recorded_data)
+
+    print(f"Data is saved at {save_file_path}")
     # Cleanup scrolling
     # Cleanup typewrite
     # Cleanup comments (start with shift + 3)
@@ -65,7 +65,7 @@ def write_output_file(recorded_data: list, save_file_path: str, header_file_path
 
 def print_header(file, header_file_path):
     with open(header_file_path, 'r') as header_file:
-        for line in header_file:
+        for line in header_file.readlines():
             file.write(line)
 
 
@@ -76,29 +76,29 @@ def consolidate_typewrite(file, recorded_data):
 
     # clean up scroll statements as well
     typewrite_content = ''
-    for line in recorded_data:
+    for index, line in enumerate(recorded_data):
         if 'typewrite' in line:
             if 'Key.space' in line:
                 typewrite_content += ' '
             if 'Key.backspace' in line:
                 typewrite_content = typewrite_content[:-1]
-            if len(line) == 15:
+            # only looks for the expand window command
+            if ('Key.cmd' in line) and 'Key.up' in recorded_data[index+1]:
+                expand_command = f'pyautogui.hotkey(\'winleft\', \'up\', duration=set_duration)'
+                file.write(expand_command + "\n")
+            # add shift later ..
+            if len(line) == 14:
                 letter = line[11:12]
                 typewrite_content += letter
         else:
             if typewrite_content:
                 if typewrite_content[0] != '`':
-                    typewrite_statement = f'typewrite(\'{typewrite_content}\')\n'
-                else:
-                    typewrite_statement = '# ' + typewrite_content
-                file.write(typewrite_statement)
+                    typewrite_statement = f'pyautogui.typewrite(\'{typewrite_content}\')\n'
+                else: # line is a comment
+                    typewrite_statement = '# ' + typewrite_content[1:]
+                file.write(typewrite_statement + "\n")
                 typewrite_content = ''
-            file.write(line)
-
-# TODO Function that calls write_output_file should include the
-
-# first, request file name and display default path that it will be saved to
-# include option for import header
+            file.write(line + "\n")
 
 '''
 # User Notes
