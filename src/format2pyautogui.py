@@ -7,6 +7,7 @@ import os
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
+
 # Convert mouse events to pyautogui format. Called in on_press()
 def mouse2pyautogui(x=None, y=None, button=None, dx=None, dy=None):
     # example: mouse2pyautogui(x = x, y = y, button = button)
@@ -83,7 +84,7 @@ def consolidate_typewrite(file, recorded_data):
             if 'Key.backspace' in line:
                 typewrite_content = typewrite_content[:-1]
             # only looks for the expand window command
-            if ('Key.cmd' in line) and 'Key.up' in recorded_data[index+1]:
+            if ('Key.cmd' in line) and 'Key.up' in recorded_data[index + 1]:
                 expand_command = f'pyautogui.hotkey(\'winleft\', \'up\', duration=set_duration)'
                 file.write(expand_command + "\n")
             # add shift later ..
@@ -94,11 +95,12 @@ def consolidate_typewrite(file, recorded_data):
             if typewrite_content:
                 if typewrite_content[0] != '`':
                     typewrite_statement = f'pyautogui.typewrite(\'{typewrite_content}\')\n'
-                else: # line is a comment
+                else:  # line is a comment
                     typewrite_statement = '# ' + typewrite_content[1:]
                 file.write(typewrite_statement + "\n")
                 typewrite_content = ''
             file.write(line + "\n")
+
 
 '''
 # User Notes

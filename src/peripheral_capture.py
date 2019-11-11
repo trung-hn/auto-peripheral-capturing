@@ -2,17 +2,20 @@
 # File: peripheral_capture.py
 # Name: Trung Hoang
 # Desc: Contact Paxton Wills for more info
-
-from pynput.mouse import Listener as MouseListener
-from pynput.mouse import Controller as MouseController
-from pynput.keyboard import Listener as KeyboardListener
-from pynput.keyboard import Controller as KeyboardController
-from pynput.keyboard import Key
-from format2pyautogui import mouse2pyautogui, keyboard2pyautogui, img2pyautogui, write_output_file
-# import keyboard
-import pyautogui, os, threading, webbrowser
+import subprocess
 import tkinter as tk
 import tkinter.filedialog as tk_dialog
+
+# import keyboard
+import os
+import pyautogui
+import webbrowser
+from format2pyautogui import mouse2pyautogui, keyboard2pyautogui, img2pyautogui, write_output_file
+from pynput.keyboard import Controller as KeyboardController
+from pynput.keyboard import Key
+from pynput.keyboard import Listener as KeyboardListener
+from pynput.mouse import Controller as MouseController
+from pynput.mouse import Listener as MouseListener
 
 
 # Main GUI

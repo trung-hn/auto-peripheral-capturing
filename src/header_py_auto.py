@@ -35,6 +35,7 @@ def start_mod_file_builder():
     pyautogui.typewrite(mod_filebuilder_path)
     pyautogui.typewrite(['enter'])
 
+
 # duration of each click
 set_duration = 1
 start_mod_file_builder()
