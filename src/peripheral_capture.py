@@ -1,7 +1,3 @@
-# Date: 9/11/2019
-# File: peripheral_capture.py
-# Name: Trung Hoang
-# Desc: Contact Paxton Wills for more info
 import subprocess
 import tkinter as tk
 import tkinter.filedialog as tk_dialog
@@ -42,16 +38,20 @@ class MainApplication(tk.Frame):
         root = self.root
 
         # Recording Options
-        tk.Label(root, text="Press this key to start recording:").grid(row=0, column=0, sticky=tk.W)
+        tk.Label(root, text="Press this key to start recording:").grid(
+            row=0, column=0, sticky=tk.W)
         self.recording_trigger_key.set("Scroll Lock")
         choices = {"None", "Scroll Lock", "Num Lock", "Caps Lock"}
-        tk.OptionMenu(root, self.recording_trigger_key, *choices).grid(row=0, column=1)
+        tk.OptionMenu(root, self.recording_trigger_key,
+                      *choices).grid(row=0, column=1)
 
         # Image Capturing Options
-        tk.Label(root, text="Press this key to start Image capturing:").grid(row=2, column=0, sticky=tk.W)
+        tk.Label(root, text="Press this key to start Image capturing:").grid(
+            row=2, column=0, sticky=tk.W)
         self.img_trigger_key.set("Num Lock")
         choices = {"None", "Scroll Lock", "Num Lock", "Caps Lock"}
-        tk.OptionMenu(root, self.img_trigger_key, *choices).grid(row=2, column=1)
+        tk.OptionMenu(root, self.img_trigger_key, *
+                      choices).grid(row=2, column=1)
 
         # Start button
         start_button = tk.Button(root, text="Choose Save Location\n& Start Program", command=self.call_program,
@@ -69,17 +69,22 @@ class MainApplication(tk.Frame):
                  justify=tk.LEFT).grid(row=20, column=0, columnspan=1, sticky=tk.W)
 
         # Message
-        self.message = tk.Label(root, text="...", fg="white", bg="green", justify=tk.LEFT)
+        self.message = tk.Label(
+            root, text="...", fg="white", bg="#3281a8", justify=tk.LEFT)
         self.message.grid(row=30, column=0, columnspan=3, sticky="ew", )
 
         # Credit
-        link1 = tk.Label(root, text="Credit: Trung Hoang", fg="blue", cursor="hand2")
+        link1 = tk.Label(root, text="Credit: Trung Hoang",
+                         fg="blue", cursor="hand2")
         link1.grid(row=40, column=0, columnspan=1, sticky="e")
-        link1.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/trung-hn"))
+        link1.bind(
+            "<Button-1>", lambda e: webbrowser.open_new("https://github.com/trung-hn"))
 
-        link1 = tk.Label(root, text="and Paxton Wills", fg="blue", cursor="hand2")
+        link1 = tk.Label(root, text="and Paxton Wills",
+                         fg="blue", cursor="hand2")
         link1.grid(row=40, column=1, columnspan=1, sticky="w")
-        link1.bind("<Button-1>", lambda e: webbrowser.open_new("https://github.com/PaxAmericana"))
+        link1.bind(
+            "<Button-1>", lambda e: webbrowser.open_new("https://github.com/PaxAmericana"))
 
     # Open Save Folder Action
     def open_save_dir(self):
@@ -90,7 +95,8 @@ class MainApplication(tk.Frame):
     def call_program(self):
 
         # Message
-        self.message.config(text="APPLICATION IS RUNNING. PRESS ESC TO STOP AND SAVE", bg="green")
+        self.message.config(
+            text="APPLICATION IS RUNNING. PRESS ESC TO STOP AND SAVE", bg="green")
 
         # Prompt user for file path
         self.file_path = tk_dialog.asksaveasfilename(defaultextension=".py")
@@ -108,10 +114,12 @@ class MainApplication(tk.Frame):
         self.go_to_button.config(state=tk.NORMAL, fg="white", bg="#3281a8")
 
         # Save recorded_data to a file. This is handled in format2pyautogui.py
-        write_output_file(recorded_data=self.recorded_data, save_file_path=self.file_path)
+        write_output_file(recorded_data=self.recorded_data,
+                          save_file_path=self.file_path)
 
         # Message
-        self.message.config(text="APPLICATION STOPPED, DATA IS SAVED", bg="#3281a8")
+        self.message.config(
+            text="APPLICATION STOPPED, DATA IS SAVED", bg="#3281a8")
 
         # Bring window to the front
         root.attributes('-topmost', 1)
@@ -177,11 +185,14 @@ class MainApplication(tk.Frame):
             if key == Key.ctrl_l and mouse_top_left_corner and img_capturing:
                 print(f"Image captured from {mouse_top_left_corner} to "
                       f"{mouse.position} is save as screen_shot_{count}.png")
-                end = [mouse.position[i] - mouse_top_left_corner[i] for i in range(2)]
+                end = [mouse.position[i] - mouse_top_left_corner[i]
+                       for i in range(2)]
                 save_image_name = f"screen_shot_{count}"
                 save_image_path = f"{save_dir}/images/{save_image_name}.png"
-                pyautogui.screenshot(region=(*mouse_top_left_corner, *end)).save(save_image_path)
-                self.recorded_data.append(img2pyautogui(f"{save_image_path}", save_image_name))
+                pyautogui.screenshot(
+                    region=(*mouse_top_left_corner, *end)).save(save_image_path)
+                self.recorded_data.append(img2pyautogui(
+                    f"{save_image_path}", save_image_name))
                 mouse_top_left_corner = ()
                 count += 1
 
@@ -211,13 +222,15 @@ class MainApplication(tk.Frame):
         # Mouse clicked event
         def on_click(x, y, button, pressed):
             if pressed and recording and (not img_capturing):
-                self.recorded_data.append(mouse2pyautogui(x=x, y=y, button=button))
+                self.recorded_data.append(
+                    mouse2pyautogui(x=x, y=y, button=button))
                 print(mouse2pyautogui(x=x, y=y, button=button))
 
         # Mouse scrolled event
         def on_scroll(x, y, dx, dy):
             if recording and (not img_capturing):
-                self.recorded_data.append(mouse2pyautogui(x=x, y=y, dx=dx, dy=dy))
+                self.recorded_data.append(
+                    mouse2pyautogui(x=x, y=y, dx=dx, dy=dy))
                 print(mouse2pyautogui(x=x, y=y, dx=dx, dy=dy))
 
         # Start listening
